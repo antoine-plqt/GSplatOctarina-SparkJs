@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spark Benchmarks webgl2</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="status">chargement ...</div> 
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../js/vendor/three/build/three.module.js",
+        "three/addons/": "../js/vendor/three/examples/jsm/",
+        "@sparkjsdev/spark": "../../dist/spark.module.js"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { SplatMesh, SparkRenderer } from "@sparkjsdev/spark";
+    import Stats from "stats-gl"
+
+    // Params benchmarks
+    /*
+    const BENCH_NAME = "spark-webgl2";
+    const WARMUP_MS = 3000;     // temps avant mesure
+    const MEASURE_MS = 20000;   // temps de la mesure
+    const PIXEL_RATIO = 1;      // fixe : pixel du canvas par rapport à pixel réel, à reprendre dans Unity
+    const ROT_SPEED = 1 / 2500; // rad/ms, rotation calée sur le temps à reproduire dans Unity*/
+
+    // Scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setPixelRatio(1);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // overlay visuel seulement
+    const stats = new Stats({trackGPU: true});
+    document.body.appendChild(stats.dom);
+    stats.init(renderer);
+
+    const spark = new SparkRenderer({ renderer });
+      spark.lodSplatCount = 1_500_000; // budget max de splat
+    scene.add(spark);
+
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    const splat = new SplatMesh({ url: "/assets/splat-lod.rad"});
+    splat.quaternion.set(1, 0, 0, 0);
+    splat.position.set(0, 0, -3);
+    scene.add(splat);
+
+    // Timer query GPU
+    /*const gl = renderer.getContext();
+    const ext = gl.getExtension("EXT_disjoint_timer_query_webgl2");
+    if(!ext) console.warn("EXT_disjoint_timer_query_webgl2 indisponible : pas de temps GPU !");
+    const pendingQueries = [];
+
+    function gpuBegin(){
+        if(!ext) return null;
+        const q = gl.createQuery();
+        gl.beginQuery(ext.TIME_ELAPSED_EXT, q);
+        return q;
+    }*/
+
+    let lastTime;
+    renderer.setAnimationLoop(function animate(time) {
+      const deltaTime = time - (lastTime || time);
+      lastTime = time;
+      renderer.render(scene, camera);
+      stats.update();
+      splat.rotation.y += deltaTime / 2500;
+    });
+
+    setInterval(() => {
+      let lod = 0;
+      spark.lodInstances?.forEach((i) => (lod += i.numSplats ?? 0));
+      console.log("Splats LoD :", lod, "| actifs : ", spark.activeSplats);
+    }, 1000);
+  </script>
+</body>
+
+</html>

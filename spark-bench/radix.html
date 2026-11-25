@@ -1,0 +1,59 @@
+<style> body {margin: 0;} </style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.webgpu.js",
+      "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.webgpu.js",
+      "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.tsl.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/",
+      "@sparkjsdev/radix": "https://cdn.jsdelivr.net/npm/@sparkjsdev/radix@0.0.1/dist/radix.module.js",
+      "stats-gl": "https://esm.sh/stats-gl?external=three"
+    }
+  }
+</script>
+<script type="module">
+  import * as THREE from "three";
+  import { GpuArrays, SplatCollection, SplatRenderer, createRenderer, loadSplats } from "@sparkjsdev/radix";
+  import Stats from "stats-gl"
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 1000);
+  const renderer = await createRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // stats
+  const stats = new Stats({trackGPU: true});
+  document.body.appendChild(stats.dom);
+  stats.init(renderer);
+
+  window.addEventListener('resize', onWindowResize, false);
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  // Splat file loading .rad handling not added for now in lib
+  const data = await loadSplats("/assets/splat.ply");
+  const splat = new THREE.Object3D();
+  splat.quaternion.set(1, 0, 0, 0);
+  splat.position.set(0, 0, -3);
+  scene.add(splat);
+
+  // Init of Renderer
+  const collection = new SplatCollection([
+    SplatCollection.arrays(GpuArrays.fromData(renderer, data), { matrixWorld: splat.matrixWorld }),
+  ]);
+  // Force WebGPU splats sort with GPU
+  scene.add(new SplatRenderer({ renderer, collection, sortMode: "gpu" }));
+
+  let lastTime;
+  renderer.setAnimationLoop(function animate(time) {
+    const deltaTime = time - (lastTime || time);
+    lastTime = time;
+    splat.rotation.y += deltaTime / 2500;
+    renderer.render(scene, camera);
+    stats.update();
+  });
+</script>

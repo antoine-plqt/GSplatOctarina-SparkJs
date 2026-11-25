@@ -19,7 +19,8 @@
       "imports": {
         "three": "../js/vendor/three/build/three.module.js",
         "three/addons/": "../js/vendor/three/examples/jsm/",
-        "@sparkjsdev/spark": "../../dist/spark.module.js"
+        "@sparkjsdev/spark": "../../dist/spark.module.js",
+        "stats-gl": "https://esm.sh/stats-gl?external=three"
       }
     }
   </script>
@@ -60,7 +61,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    const splat = new SplatMesh({ url: "/assets/splat-lod.rad"});
+    const splat = new SplatMesh({ url: "/assets/splat.ply"});
     splat.quaternion.set(1, 0, 0, 0);
     splat.position.set(0, 0, -3);
     scene.add(splat);

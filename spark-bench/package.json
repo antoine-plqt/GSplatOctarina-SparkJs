@@ -12,8 +12,9 @@
     "vite": "^8.3.6"
   },
   "dependencies": {
+    "@sparkjsdev/radix": "^0.0.1",
     "@sparkjsdev/spark": "^2.4.0",
     "stats-gl": "^4.2.3",
-    "three": "^0.187.0"
+    "three": "^0.186.1"
   }
 }
